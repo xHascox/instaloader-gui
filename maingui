@@ -1,0 +1,183 @@
+
+import time
+import sys
+
+
+import os
+import shutil
+from tkinter import *
+from tkinter import ttk
+from tkinter.ttk import Combobox
+from tkinter.filedialog import askopenfilename
+from tkinter.filedialog import askopenfilenames
+from tkinter.filedialog import askdirectory
+from tkinter.filedialog import asksaveasfilename
+
+from promptuser import pufiles, pufile, pudir, pusavefile
+
+def clean_create_folder(tmpfolder):
+    '''
+    Creates an empty Folder
+    Deletes previous existence
+    tmpfolder = path to folder
+    '''
+    if not os.path.exists(tmpfolder):
+        os.mkdir(tmpfolder)
+    else:
+        shutil.rmtree(tmpfolder)
+        while True:
+            try:
+                os.mkdir(tmpfolder)
+                break
+            except:
+                pass
+   
+
+
+
+if __name__ == '__main__':
+    root=Tk()
+    class Window(Frame):
+        '''
+        THE GUI
+        '''
+        def __init__(self, master=None):
+            
+            Frame.__init__(self, master)
+            self.master = master
+            self.pack(fill=BOTH, expand=1)
+    
+    ################
+    ### THE  GUI ###
+    ################
+    labelwidth = 15
+    nrows = 6
+    rows = []
+    textlabels = []
+    texts = [".iso File:", "File Extension:", "Hersteller:", "OS:", "Produkt-Typ:", "Produkt:"]
+    comboinputs = []
+    #comboplaceholder = ["nsrl.iso", '".exe",".jpg"', '"Microsoft", "Apple"', '"Windows"', '"Antivirus"', '"WindowsDefender"']
+    comboplaceholder = ["RDS_modern.iso", '', '', '', '', '']
+    selections=[]
+    comboboxes=[]
+    #MAKE ROWS
+    for i in range(nrows):
+        #ROW
+        rows.append(Frame(root))
+        if i!=1:
+            if i==0:
+                rows[i].pack(side=TOP, fill=X, padx=5, pady=25)
+            else:
+                rows[i].pack(side=TOP, fill=X, padx=5, pady=5)
+        #DESCR
+        textlabels.append(Label(rows[i], text=texts[i], font=("Helvetica", 12), anchor=W, justify=LEFT, width=labelwidth))
+        if i!=1:
+            textlabels[i].pack(side=LEFT, padx=10, pady=10)
+        #COMBOBOX
+        comboinputs.append(StringVar())
+        comboinputs[i].set(comboplaceholder[i])
+        if i!=0:
+            selections.append([])
+        else:
+            selections.append(["RDS_modern.iso"])
+
+        if i!=1:
+            comboboxes.append(Combobox(rows[i], textvariable=comboinputs[i], values=selections[i]))
+        else:#File Extension:
+            comboboxes.append(Text(rows[i], height=1))
+        
+        if i!=1:#File Extension fix
+            comboboxes[i].pack(side=LEFT, expand=YES, fill=X, padx=10, pady=10)
+
+    #File Extension not at top:
+    rows[1].pack(side=TOP, fill=X, padx=5, pady=35)
+    #DESCR
+    textlabels[1].pack(side=LEFT, padx=10, pady=10)
+    #COMBOBOX
+    comboboxes[1].pack(side=LEFT, expand=YES, fill=X, padx=10, pady=10)
+
+
+
+
+
+
+    # ROW 0
+
+    #The Start Button "Run"
+    #Declares D (Dictionary to translate info in Hash to what sb entered)
+    #Creates tmpfolder
+    startbutton_txt = StringVar()
+    startbutton_txt.set("Extract .iso")
+    startbutton = Button(rows[0], textvariable=startbutton_txt, command=handle_iso)
+    startbutton.pack(side=RIGHT, padx=10, pady=10)
+
+    #The Iso Button "Choose .iso"
+    #Declares global isofile with path of .iso
+    isobutton = Button(rows[0], text="Select .iso", command=choose_iso)
+    isobutton.pack(side=RIGHT, padx=10, pady=10)
+
+    # RUNROW
+    runrow=Frame(root)
+    runrow.pack(side=TOP, fill=X, padx=5, pady=5)
+    spaceleft = Label(runrow, text="", font=("Helvetica", 12), anchor=W, justify=LEFT, width=labelwidth)
+    spaceleft.pack(side=LEFT, padx=10, pady=10)
+    #XWays AXIOM Button Export
+    finalbutton1 = Button(runrow, text="Export for X-Ways & AXIOM", command=finalexport1)
+    finalbutton1.pack(side=RIGHT, padx=10, pady=10)
+    #Nuix & UFED Button Export
+    finalbutton2 = Button(runrow, text="Export for Nuix & UFED", command=finalexport2)
+    finalbutton2.pack(side=RIGHT, padx=10, pady=10)
+
+    #Status Text Label
+    tipprow = Frame(root)
+    tipprow.pack(side=TOP, fill=X, padx=5, pady=5)
+    tipptext = StringVar()
+    tipptext.set("Hinweis: Nur exakte Übereinstimmungen gelten - am besten immer einen Vorschlag übernehmen.\nTipp: Mehrfachauswahlen sind mit Kommas getrennt möglich.\nTipp: Keine Eingabe oder ein Komma am Ende = Wildcard")
+    tipplabel = Label(tipprow, textvariable=tipptext, font=("Helvetica", 12), anchor=W, justify=LEFT, width=labelwidth*5)
+    tipplabel.pack(side=LEFT, padx=10, pady=10)
+
+    #Status Text Label
+    statusrow = Frame(root)
+    statusrow.pack(side=TOP, fill=X, padx=5, pady=5)
+    statustext = StringVar()
+    statustext.set("Status: idle")
+    statuslabel = Label(statusrow, textvariable=statustext, font=("Helvetica", 12), anchor=W, justify=LEFT, width=labelwidth*2)
+    statuslabel.pack(side=LEFT, padx=10, pady=10)
+    #Result Text Label
+    resulttext = StringVar()
+    resultlabel = Label(statusrow, textvariable=resulttext, font=("Helvetica", 12), anchor=W, justify=LEFT, width=labelwidth*2)
+    resultlabel.pack(side=LEFT, padx=10, pady=10)
+    
+
+    #GUI Window Title and Size:
+    root.wm_title("NSRL Hash Selector")
+    root.geometry(str(int(950))+"x"+str(int(700)))
+
+    #Make the left-Labels the same size:
+    root.update()
+
+    
+    selections[1]=["0"]
+
+    prevcomboinputs=["" for each in comboinputs]
+    print("entering mainloop")
+    '''
+    while 1:
+        try:
+            root.update_idletasks()
+            root.update()    
+        except:#gives an error when window is closed - cant be updated anymore ;) logically ._.
+            sys.exit()
+        if KL_exists:
+            #only update dropdowns if the input changed, takes a long time to update
+            if prevcomboinputs != [each.get() for each in comboinputs]:
+                print(prevcomboinputs)
+                print([each.get() for each in comboinputs])
+
+                update_dropdowns_crossfilter()
+                prevcomboinputs=[each.get() for each in comboinputs]
+                print("updates comboboxes")
+
+
+
+        #tkinter GUI mainloop, after that (after user clicks Run button) the whole program runs'''
